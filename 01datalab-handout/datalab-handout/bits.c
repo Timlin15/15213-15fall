@@ -274,11 +274,16 @@ int howManyBits(int x) {
  *   Rating: 4
  */
 unsigned floatScale2(unsigned uf) {
-  int fracBits = (0xff >> 8 | 0xff >> 15) & uf;
-  if (uf >> 23 & 0xff) {
-    uf = (((uf >> 23) + 1) << 23) | fracBits;
-  }
-  return uf;
+       unsigned sign = uf >> 31;
+       unsigned exp = uf >> 23 & 0xFF;
+       unsigned frac = uf & 0x7fffff;
+       if (!(exp ^ 0xff)) {
+         return uf;
+       }
+       if (!exp) {//denorm
+         return (sign << 31)| frac << 1 | exp << 23;
+       }
+       return (sign << 31) | frac | (exp + 1) << 23;
 }
 /* 
  * floatFloat2Int - Return bit-level equivalent of expression (int) f
@@ -293,7 +298,25 @@ unsigned floatScale2(unsigned uf) {
  *   Rating: 4
  */
 int floatFloat2Int(unsigned uf) {
-  return 2;
+       unsigned sign = uf >> 31;
+       unsigned exp = uf >> 23 & 0xFF;
+       unsigned frac = (uf & 0x7fffff) | 0x800000;
+       if (!(exp ^ 0xff) || exp > 157) {
+         return 0x80000000u;
+       }
+       if (exp < 127) {//denorm
+         return 0;
+       }
+       exp = exp - 127;
+       if (exp > 23) {
+         frac <<= (exp - 23);
+       } else {
+         frac >>= (23 - exp);
+       }
+       if (!sign) {
+         return frac;
+       }
+       return ~frac + 1;
 }
 /* 
  * floatPower2 - Return bit-level equivalent of the expression 2.0^x
@@ -309,5 +332,15 @@ int floatFloat2Int(unsigned uf) {
  *   Rating: 4
  */
 unsigned floatPower2(int x) {
-    return 2;
+       if (x >= 128) {
+         return 0x7f800000;
+       }
+       if (x >= -128) {
+         return (x + 127) << 23;
+       }
+       int shift = x + 149;
+       if (shift < 0) {
+         return 0;
+       }
+       return 1 << shift;
 }
