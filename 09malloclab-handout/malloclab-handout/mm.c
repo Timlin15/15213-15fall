@@ -17,6 +17,9 @@
 #include <errno.h>
 
 #include "mm.h"
+
+//#include <bits/fenv.h>
+
 #include "memlib.h"
 
 /*********************************************************
@@ -65,7 +68,7 @@ team_t team = {
 
 /**compute the address of next and previous blocks of bp. */
 #define PREV_BLKP(bp)       ((char *)(bp) - GET_SIZE((char *)(bp) - DSIZE))
-#define NEXT_BLKP(bp)       ((char *)(bp) + GET_SIZE(HDRP(bp)) - WSIZE)
+#define NEXT_BLKP(bp)       ((char *)(bp) + GET_SIZE(HDRP(bp)))
 //#define NEXT_BLKP(bp) ((char *)(bp) + GET_SIZE(((char *)HDRP(bp) - WSIZE)))
 //#define PREV_BLKP(bp) ((char *)(bp) - GET_SIZE(((char *)HDRP(bp) - DSIZE)))
 static void *extend_heap(size_t word);
@@ -137,15 +140,16 @@ size_t size = GET_SIZE(HDRP(bp));
 if (prev_alloc && next_alloc){
   return bp;
 }
-else if (prev_alloc && !next_alloc){
+if (prev_alloc && !next_alloc){
   size += GET_SIZE(HDRP(NEXT_BLKP(bp)));
-  PUT(HDRP(NEXT_BLKP(bp)), PACK(size, 0));
-  PUT(FTRP(NEXT_BLKP(bp)), PACK(size, 0));
+  PUT(HDRP(bp), PACK(size, 0));
+  PUT(FTRP(bp), PACK(size, 0));
 }
 else if (!prev_alloc && next_alloc){
   size += GET_SIZE(HDRP(PREV_BLKP(bp)));
+  PUT(FTRP(bp), PACK(size, 0));
   PUT(HDRP(PREV_BLKP(bp)), PACK(size, 0));
-  PUT(FTRP(PREV_BLKP(bp)), PACK(size, 0));
+  bp = PREV_BLKP(bp);
 }
 else {
   size += GET_SIZE(HDRP(PREV_BLKP(bp))) + GET_SIZE(HDRP(NEXT_BLKP(bp)));
@@ -208,11 +212,16 @@ static void *find_fit(size_t asize){
 static void place(void *bp, size_t asize){
   //printf("in place\n");
 size_t size = GET_SIZE(HDRP(bp));
-char *p = bp;
-PUT(p, PACK(asize, 1));
-PUT(p + asize - WSIZE, PACK(asize, 1));
-PUT(p + asize, PACK(size - asize, 0));
-PUT(p + size - WSIZE, PACK(size - asize, 0));
+  if (size - asize >= 2 * DSIZE) {
+    PUT(HDRP(bp), PACK(asize, 1));
+    PUT(FTRP(bp), PACK(asize, 1));
+    bp = NEXT_BLKP(bp);
+    PUT(HDRP(bp), PACK(size - asize, 0));
+    PUT(FTRP(bp), PACK(size - asize, 0));
+  } else {
+    PUT(HDRP(bp), PACK(size, 1));
+    PUT(FTRP(bp), PACK(size, 1));
+  }
 }
 
 /*
@@ -235,7 +244,7 @@ void *mm_realloc(void *ptr, size_t size)
     void *oldptr = ptr;
     void *newptr;
     size_t copySize;
-    
+
     newptr = mm_malloc(size);
     if (newptr == NULL)
       return NULL;
