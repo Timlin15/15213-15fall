@@ -234,3 +234,33 @@ Jobs:
 
 ### Overall
 
+Maintain a jobs which is a list of job for searching up the `jid` of jobs
+
+The `waitpid`, `kill`, `fork`, `execve`, `setpgid`,and `sigprocmask` functions will come in very handy. The `WUNTRACED` and `WNOHANG` options to `waitpid` will also be useful.
+
+### `eval`
+
+In eval, the parent must use `sigprocmask` to block `SIGCHLD` signals before it forks the child, and then unblock these signals, again using `sigprocmask` after it adds the child to the job list by calling `addjob`. Since children inherit the blocked vectors of their parents, the child must be sure to then unblock `SIGCHLD` signals before it execs the new program. The parent needs to block the `SIGCHLD` signals in this way in order to avoid the race condition where the child is reaped by `sigchld` handler (and thus removed from the job list) before the parent calls `addjob`
+
+### `builtin_cmd`
+
+Use a switch statement for command `quit`, `fg`, `bg` and `jobs`.
+
+### `do_bgfg`
+
+
+
+### `waitfg`
+
+In `waitfg`,use a busy loop around the sleep function
+
+### `sigchld_handler`
+
+ In `sigchld_handler`,use exactly one call to `waitpid`.  be sure to send SIGINT and `SIGTSTP` signals to the entire foreground process group, using ''-pid" instead of "pid" in the argument to the kill function
+
+### `sigint_handler`
+
+
+
+### `sigtstp_handler`
+

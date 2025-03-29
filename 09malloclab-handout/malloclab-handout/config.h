@@ -12,7 +12,6 @@
  * This is the default path where the driver will look for the
  * default tracefiles. You can override it at runtime with the -t flag.
  */
-#define TRACEDIR "/afs/cs/project/ics2/im/labs/malloclab/traces/"
 
 /*
  * This is the list of default tracefiles in TRACEDIR that the driver
@@ -21,18 +20,20 @@
  * your students to implement realloc, you can delete the last two
  * traces.
  */
+#define TRACEDIR "./traces/"
+
 #define DEFAULT_TRACEFILES \
-  "amptjp-bal.rep",\
-  "cccp-bal.rep",\
-  "cp-decl-bal.rep",\
-  "expr-bal.rep",\
-  "coalescing-bal.rep",\
-  "random-bal.rep",\
-  "random2-bal.rep",\
-  "binary-bal.rep",\
-  "binary2-bal.rep",\
-  "realloc-bal.rep",\
-  "realloc2-bal.rep"
+"amptjp-bal.rep",\
+"cccp-bal.rep",\
+"cp-decl-bal.rep",\
+"expr-bal.rep",\
+"coalescing-bal.rep",\
+"random-bal.rep",\
+"random2-bal.rep",\
+"binary-bal.rep",\
+"binary2-bal.rep"
+
+#define AVG_LIBC_THRUPUT      45000E3  /* 45000 Kops/secm, based my cpu */
 
 /*
  * This constant gives the estimated performance of the libc malloc
@@ -43,7 +44,6 @@
  * to their score.  This deters students from building extremely fast,
  * but extremely stupid malloc packages.
  */
-#define AVG_LIBC_THRUPUT      600E3  /* 600 Kops/sec */
 
  /* 
   * This constant determines the contributions of space utilization
